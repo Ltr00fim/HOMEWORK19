@@ -1,36 +1,33 @@
-import jwt
 from flask import request, abort
-from constants import JWT_ALGORITHM, JWT_SECRET
+from config import Config
+import jwt
 
 
-def auth_reguired(func):
+def auth_required(func):
     def wrapper(*args, **kwargs):
-        if "Authorization" not in request.headers:
+        if 'Authorization' not in request.headers:
             abort(401)
-        token = request.headers["Authorization"].split("Bearer ")[-1]
         try:
-            jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        except Exception as e:
-            print("JWT Decode Exception", e)
+            token = request.headers['Authorization'].split('Bearer ')[-1]
+            data = jwt.decode(token, Config.JWT_SECRET, algorithms=[Config.JWT_ALGORITHM])
+            return func(*args, **kwargs)
+        except Exception:
             abort(401)
-        return func(*args, **kwargs)
     return wrapper
 
 
-def admin_reguired(func):
+def admin_required(func):
     def wrapper(*args, **kwargs):
-        if "Authorization" not in request.headers:
+        if 'Authorization' not in request.headers:
             abort(401)
-        token = request.headers["Authorization"].split("Bearer ")[-1]
-        role = None
         try:
-            user_token = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-            role = user_token.get("role", "user")
-            print(role)
-        except Exception as e:
-            print("JWT Decode Exception", e)
-            abort(401)
-        if role != "admin":
-            abort(401)
-        return func(*args, **kwargs)
+            token = request.headers['Authorization'].split('Bearer ')[-1]
+            data = jwt.decode(token, Config.JWT_SECRET, algorithms=[Config.JWT_ALGORITHM])
+            print(data)
+            if data['role'] == 'admin':
+                return func(*args, **kwargs)
+            abort(403)
+        except Exception:
+            raise
+
     return wrapper

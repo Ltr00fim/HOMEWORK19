@@ -5,14 +5,17 @@ class UserDAO:
     def __init__(self, session):
         self.session = session
 
-    def get_name(self, name):
-        return self.session.query(User).filter(User.username == name).one()
+    def get_one(self, pk):
+        return self.session.query(User).get(pk)
 
     def get_all(self):
         return self.session.query(User).all()
 
+    def get_by_username(self, username):
+        return self.session.query(User).filter(User.username == username).first()
+
     def create(self, user_d):
-        ent = User(**user_d)
+        ent = User(username=user_d['username'], password=user_d['password'], role=user_d['role'])
         self.session.add(ent)
         self.session.commit()
         return ent
